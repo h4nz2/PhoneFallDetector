@@ -11,6 +11,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -22,17 +23,23 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.content.Intent;
 import android.widget.Toast;
-import android.util.Log;
-import android.net.Uri;
 
 import java.util.LinkedList;
+import java.util.Properties;
+
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometer;
-    private int count;
     private LinkedList measuredValues;
     private String email;
     private String password;
