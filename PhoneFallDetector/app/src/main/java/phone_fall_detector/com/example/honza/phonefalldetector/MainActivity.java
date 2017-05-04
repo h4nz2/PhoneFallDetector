@@ -211,29 +211,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * @param recipient recipient(s) to send the message to
      */
     private void sendEmail(String message, String recipient){
-
-
-        Intent intent = null, chooser=null;
-        Log.i("Send email", "");
-
         String[] TO = {recipient};
         Intent emailIntent = new Intent(Intent.ACTION_SEND);
         emailIntent.setData(Uri.parse("mailto:"));
-
 
         emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, "email send by phone");
         emailIntent.putExtra(Intent.EXTRA_TEXT, message);
         emailIntent.setType("message/rfc822");
 
-
-
-
-
         try {
             startActivity(Intent.createChooser(emailIntent, "Send mail..."));
-            finish();
-            Log.i("Email Send", "");
         } catch (android.content.ActivityNotFoundException ex) {
             Toast.makeText(MainActivity.this,
                     "There is no email client installed.", Toast.LENGTH_SHORT).show();
