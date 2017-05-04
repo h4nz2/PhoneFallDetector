@@ -15,7 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -103,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         alertDialogBuilder.show();
 
         //send the email here
-        sendEmail();
+        sendEmailWithLocation();
     }
 
     @Override
@@ -115,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return Math.sqrt(x*x + y*y + z*z);
     }
 
-    private void sendEmail(){
+    private void sendEmailWithLocation(){
         if(ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             return;
@@ -132,10 +131,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationManager.requestSingleUpdate(criteria, new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                /*SEND
-                * THE
-                * EMAIL
-                * HERE*/
+                String message = "Your phone fell at/n Latitude: " +
+                        Double.toString(location.getLatitude()) +
+                        " Longitude: " +
+                        Double.toString(location.getLongitude());
+                String recipient = "jan.hric@hva.nl";
+                sendEmail(message, recipient);
 
                 progressBar.setVisibility(View.GONE);
             }
@@ -187,5 +188,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    private void sendEmail(String message, String recipient){
+
     }
 }
