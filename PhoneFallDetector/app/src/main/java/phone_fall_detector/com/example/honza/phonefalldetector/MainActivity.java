@@ -11,6 +11,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -18,20 +19,30 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.content.Intent;
 import android.widget.Toast;
-import android.util.Log;
-import android.net.Uri;
 
 import java.util.LinkedList;
+import java.util.Properties;
+
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener{
     private SensorManager sensorManager;
     private Sensor accelerometer;
-    private int count;
     private LinkedList measuredValues;
+    private String email;
+    private String password;
 
     private TextView viewX;
     private TextView viewY;
@@ -39,7 +50,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView viewTotal;
     private ProgressBar progressBar;
     private TextView viewOldestValue;
+    private Button button;
+    private EditText textEmail;
+    private EditText textPassword;
 
+    Session session;
+    EditText reciep, sub, msg;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -49,10 +65,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         measuredValues = new LinkedList<Double>();
 
-        //get sensors
-        if(permissionGranted())
-            startAccelerometer();
-
         //get all the views
         viewX = (TextView) findViewById(R.id.textView);
         viewY = (TextView) findViewById(R.id.textView2);
@@ -60,7 +72,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         viewTotal = (TextView) findViewById(R.id.textView4);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         viewOldestValue = (TextView) findViewById(R.id.textView5);
-        }
+        button = (Button) findViewById(R.id.button);
+        textEmail = (EditText) findViewById(R.id.editTextEmail);
+        textPassword = (EditText) findViewById(R.id.editTextPassword);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                email = textEmail.getText().toString();
+                password = textPassword.getText().toString();
+                textPassword.setText("");
+                if (permissionGranted())
+                    startAccelerometer();
+            }
+        });
+    }
 
     @Override
     public void onSensorChanged(SensorEvent event){
@@ -84,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         //check for a potential fall
         if(measuredValues.size() >= 50){
-            if((double)measuredValues.getFirst() < 2.0 && (double)measuredValues.getLast() > 13.0){
+            if((double)measuredValues.getFirst() < 2.0 && (double)measuredValues.getLast() > 11.0){
                 fallDetected();
             }
             else
@@ -151,9 +177,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         " Longitude: " +
                         Double.toString(location.getLongitude());
                 String recipient = "jan.hric@hva.nl";
-                sendEmail(message, recipient);
-
-                progressBar.setVisibility(View.GONE);
+                String subject = "Phone fall";
+                sendEmail(message, subject, recipient);
             }
 
             @Override
@@ -210,21 +235,56 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * @param message message to be sent
      * @param recipient recipient(s) to send the message to
      */
-    private void sendEmail(String message, String recipient){
-        String[] TO = {recipient};
-        Intent emailIntent = new Intent(Intent.ACTION_SEND);
-        emailIntent.setData(Uri.parse("mailto:"));
+    private void sendEmail(String message, String subject, String recipient){
+        Properties props = new Properties();
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.socketFactory.port", "465");
+        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.port", "465");
 
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "email send by phone");
-        emailIntent.putExtra(Intent.EXTRA_TEXT, message);
-        emailIntent.setType("message/rfc822");
+        session = Session.getDefaultInstance(props, new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(email, password);
+            }
+        });
 
-        try {
-            startActivity(Intent.createChooser(emailIntent, "Send mail..."));
-        } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(MainActivity.this,
-                    "There is no email client installed.", Toast.LENGTH_SHORT).show();
+        RetreiveFeedTask task = new RetreiveFeedTask(message, subject, recipient);
+        task.execute();
+    }
+
+    class RetreiveFeedTask extends AsyncTask<String, Void, String> {
+        private String recipient;
+        private String subject;
+        private String messageText;
+
+        public RetreiveFeedTask(String recipient, String subject, String messageText){
+            this.recipient = recipient;
+            this.subject = subject;
+            this.messageText = messageText;
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            try{
+                Message message = new MimeMessage(session);
+                message.setFrom(new InternetAddress(email));
+                message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient));
+                message.setSubject(subject);
+                message.setContent(messageText, "text/html; charset=utf-8");
+                Transport.send(message);
+            } catch(MessagingException e) {
+                e.printStackTrace();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            progressBar.setVisibility(View.GONE);
+            Toast.makeText(getApplicationContext(), "Message sent", Toast.LENGTH_LONG).show();
         }
     }
 }
