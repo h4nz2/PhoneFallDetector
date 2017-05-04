@@ -62,10 +62,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         measuredValues = new LinkedList<Double>();
-
-
 
         //get all the views
         viewX = (TextView) findViewById(R.id.textView);
