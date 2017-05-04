@@ -3,7 +3,9 @@
     package="phone_fall_detector.com.example.honza.phonefalldetector">
 
     <uses-feature android:name="android.location"></uses-feature>
+    <uses-feature android:name="android.net"></uses-feature>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
 
 
     <application

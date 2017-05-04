@@ -18,6 +18,8 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.content.Intent;
@@ -32,6 +34,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Sensor accelerometer;
     private int count;
     private LinkedList measuredValues;
+    private String email;
+    private String password;
+    private String recipient;
 
     private TextView viewX;
     private TextView viewY;
@@ -39,6 +44,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView viewTotal;
     private ProgressBar progressBar;
     private TextView viewOldestValue;
+    private EditText textEmail;
+    private EditText textPassword;
+    private EditText textRecipient;
+    private Button button;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -49,9 +58,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         measuredValues = new LinkedList<Double>();
 
-        //get sensors
-        if(permissionGranted())
-            startAccelerometer();
+
 
         //get all the views
         viewX = (TextView) findViewById(R.id.textView);
@@ -60,7 +67,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         viewTotal = (TextView) findViewById(R.id.textView4);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         viewOldestValue = (TextView) findViewById(R.id.textView5);
-        }
+        textEmail = (EditText) findViewById(R.id.editTextEmail);
+        textPassword = (EditText) findViewById(R.id.editTextPassword);
+        textRecipient = (EditText) findViewById(R.id.editTextRecipient);
+        button = (Button) findViewById(R.id.button);
+
+         button.setOnClickListener(new View.OnClickListener() {
+             @Override
+             public void onClick(View v) {
+                 email = textEmail.getText().toString();
+                 password = textPassword.getText().toString();
+                 recipient = textRecipient.getText().toString();
+                 textPassword.setText("");
+                 //get sensors
+                 if(permissionGranted())
+                     startAccelerometer();
+             }
+         });
+    }
 
     @Override
     public void onSensorChanged(SensorEvent event){
@@ -146,11 +170,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationManager.requestSingleUpdate(criteria, new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                String message = "Your phone fell at/n Latitude: " +
+                String message = "Your phone fell at Latitude: " +
                         Double.toString(location.getLatitude()) +
                         " Longitude: " +
                         Double.toString(location.getLongitude());
-                String recipient = "jan.hric@hva.nl";
                 sendEmail(message, recipient);
 
                 progressBar.setVisibility(View.GONE);
@@ -184,8 +207,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @RequiresApi(api = Build.VERSION_CODES.M)
     public Boolean permissionGranted(){
         if(ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                &&
+                ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.INTERNET},
+                    0);
             return false;
         }
         return true;
@@ -194,7 +223,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION) && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+        if(permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION)
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                && permissions[1].equals(Manifest.permission.INTERNET)
+                && grantResults[1] == PackageManager.PERMISSION_GRANTED){
             startAccelerometer();
         }
     }
@@ -211,20 +243,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * @param recipient recipient(s) to send the message to
      */
     private void sendEmail(String message, String recipient){
-        String[] TO = {recipient};
-        Intent emailIntent = new Intent(Intent.ACTION_SEND);
-        emailIntent.setData(Uri.parse("mailto:"));
-
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "email send by phone");
-        emailIntent.putExtra(Intent.EXTRA_TEXT, message);
-        emailIntent.setType("message/rfc822");
-
-        try {
-            startActivity(Intent.createChooser(emailIntent, "Send mail..."));
-        } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(MainActivity.this,
-                    "There is no email client installed.", Toast.LENGTH_SHORT).show();
-        }
+        SendEmail sendEmail = new SendEmail(this, email, password, recipient, "Phone fall", message);
+        sendEmail.execute((Object[]) null);
+        progressBar.setVisibility(View.GONE);
     }
 }
