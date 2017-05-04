@@ -62,8 +62,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         viewOldestValue = (TextView) findViewById(R.id.textView5);
         }
 
-
-
     @Override
     public void onSensorChanged(SensorEvent event){
         //display the values
@@ -75,7 +73,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     event.values[0],
                     event.values[1],
                     event.values[2])));
-        //viewTotal.setText(Integer.toString(count));
 
         //store the values in a queue (aka LinkedList)
         measuredValues.add(getTotalAcceleration(
@@ -91,11 +88,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 fallDetected();
             }
             else
+                //keep the number of entries at 50
                 measuredValues.removeFirst();
         }
 
     }
 
+    /**
+     *Informs the user via AlertDialog and starts the sendEmail function.
+     */
     private void fallDetected() {
         measuredValues.clear();
 
@@ -114,10 +115,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
+    /**
+     * Takes the acceleration value and calculates the total acceleration of the phone.
+     * @param x Acceleration to X axis.
+     * @param y Acceleration to Y axis.
+     * @param z Acceleration to Z axis.
+     * @return Total acceleration.
+     */
     private double getTotalAcceleration(float x, float y, float z){
         return Math.sqrt(x*x + y*y + z*z);
     }
 
+    /**
+     * get the current location and call sendEmail()
+     */
     private void sendEmailWithLocation(){
         if(ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
@@ -194,6 +205,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
+    /**
+     * This function sends en email.
+     * @param message message to be sent
+     * @param recipient recipient(s) to send the message to
+     */
     private void sendEmail(String message, String recipient){
 
 
