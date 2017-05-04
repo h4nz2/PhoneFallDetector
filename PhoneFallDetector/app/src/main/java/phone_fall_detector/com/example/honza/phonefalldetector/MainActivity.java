@@ -20,6 +20,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.content.Intent;
+import android.widget.Toast;
+import android.util.Log;
+import android.net.Uri;
 
 import java.util.LinkedList;
 
@@ -192,5 +196,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void sendEmail(String message, String recipient){
 
+
+        Intent intent = null, chooser=null;
+        Log.i("Send email", "");
+
+        String[] TO = {recipient};
+        Intent emailIntent = new Intent(Intent.ACTION_SEND);
+        emailIntent.setData(Uri.parse("mailto:"));
+
+
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "email send by phone");
+        emailIntent.putExtra(Intent.EXTRA_TEXT, message);
+        emailIntent.setType("message/rfc822");
+
+
+
+
+
+        try {
+            startActivity(Intent.createChooser(emailIntent, "Send mail..."));
+            finish();
+            Log.i("Email Send", "");
+        } catch (android.content.ActivityNotFoundException ex) {
+            Toast.makeText(MainActivity.this,
+                    "There is no email client installed.", Toast.LENGTH_SHORT).show();
+        }
     }
 }
